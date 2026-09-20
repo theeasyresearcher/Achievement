@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L.A.B — Success Poster Maker</title>
+<style>
+  :root{
+    --bg:#F3F1EE; --ink:#171717; --muted:#6B6B6B;
+    --accent:#C81E4B; --accent-dark:#8F1436; --card:#FFFFFF;
+    --panel:#FFFFFF; --panel2:#F7F7F8; --panel-border:#E1E3E8;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:Helvetica,Arial,sans-serif;background:#F2F3F5;color:#1B1B1B;min-height:100vh;}
+  .app{max-width:1220px;margin:0 auto;padding:26px 20px 60px;}
+  header.top{margin-bottom:20px;border-bottom:1px solid var(--panel-border);padding-bottom:14px;}
+  header.top h1{font-family:Georgia,serif;font-size:24px;margin:0 0 4px;font-weight:normal;color:#1B1B1B;}
+  header.top h1 span{color:var(--accent);}
+  header.top p{margin:0;color:#6B7280;font-size:13px;}
+
+  .layout{display:grid;grid-template-columns:400px 1fr;gap:22px;align-items:start;}
+  @media (max-width:900px){.layout{grid-template-columns:1fr;}}
+
+  .panel{background:var(--panel);border:1px solid var(--panel-border);border-radius:10px;padding:18px;max-height:88vh;overflow-y:auto;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:11px;color:#6B7280;margin-bottom:5px;letter-spacing:.2px;font-weight:600;}
+  input[type=text], textarea, select{
+    width:100%;background:#FAFAFB;border:1px solid var(--panel-border);border-radius:6px;
+    padding:9px 10px;color:#1B1B1B;font-size:13px;font-family:inherit;
+  }
+  textarea{resize:vertical;min-height:44px;}
+  input:focus, textarea:focus, select:focus{outline:none;border-color:var(--accent);background:#fff;}
+
+  .person-card{background:var(--panel2);border:1px solid var(--panel-border);border-radius:8px;padding:12px;margin-bottom:10px;}
+  .person-card .top-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .person-card .top-row span{font-size:11px;color:#6B7280;}
+  .rm-btn{background:#fff;border:1px solid var(--panel-border);color:#6B7280;border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer;}
+  .rm-btn:hover{color:var(--accent);border-color:var(--accent);}
+  .photo-row{display:flex;align-items:center;gap:8px;}
+  .photo-row input[type=file]{font-size:11px;color:#6B7280;flex:1;}
+  .theme-swatches{display:flex;flex-wrap:wrap;gap:9px;margin-top:2px;}
+  .swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px #D8DBE0;}
+  .swatch.active{box-shadow:0 0 0 2px #1B1B1B;}
+
+  details.style-section{border:1px solid var(--panel-border);border-radius:8px;margin-bottom:16px;background:var(--panel2);}
+  details.style-section summary{cursor:pointer;padding:10px 12px;font-size:12px;font-weight:700;color:#374151;list-style:none;}
+  details.style-section summary::-webkit-details-marker{display:none;}
+  details.style-section summary:before{content:'▸ ';color:var(--accent);}
+  details.style-section[open] summary:before{content:'▾ ';}
+  .style-rows{padding:4px 12px 12px;}
+  .style-row{display:grid;grid-template-columns:1fr 60px 34px;gap:6px;align-items:center;margin-bottom:8px;}
+  .style-row .style-label{grid-column:1 / -1;font-size:11px;color:#6B7280;font-weight:600;margin-bottom:2px;}
+  .style-row select, .style-row input[type=number]{padding:6px 6px;font-size:12px;}
+  .style-row input[type=color]{width:34px;height:32px;padding:0;border:1px solid var(--panel-border);border-radius:6px;cursor:pointer;background:none;}
+
+  .add-btn, .download-btn{width:100%;border:none;border-radius:7px;padding:11px;font-size:14px;font-weight:bold;cursor:pointer;}
+  .add-btn{background:#F7F7F8;color:#374151;border:1px dashed var(--panel-border);margin-bottom:16px;}
+  .add-btn:hover{border-color:var(--accent);color:var(--accent);background:#fff;}
+  .download-btn{background:var(--accent);color:#fff;}
+  .download-btn:hover{background:var(--accent-dark);}
+
+  .preview-panel{display:flex;flex-direction:column;align-items:center;gap:12px;}
+  canvas{width:100%;max-width:560px;border-radius:6px;box-shadow:0 10px 28px rgba(0,0,0,0.12);display:block;border:1px solid #E7E8EC;}
+  .hint{color:#6B7280;font-size:12px;text-align:center;max-width:460px;}
+  footer.credit{text-align:center;color:#9CA3AF;font-size:11px;margin-top:30px;}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <h1>L.A.B <span>Success Poster Maker</span></h1>
+    <p>Build a shareable achievement update for WhatsApp groups &amp; channels</p>
+  </header>
+
+  <div class="layout">
+    <div class="panel">
+      <div class="field">
+        <label>Update Type (top tag)</label>
+        <select id="tagType">
+          <option value="PUBLICATION|UPDATE">Publication Update</option>
+          <option value="POSTER|PRESENTED">Poster Presented</option>
+          <option value="ORAL|PRESENTATION">Oral Presentation</option>
+          <option value="PHD|AWARDED">PhD Awarded</option>
+          <option value="TRAVEL|GRANT">Travel Grant</option>
+          <option value="FELLOWSHIP|AWARDED">Fellowship Awarded</option>
+          <option value="ADMISSION|SECURED">Admission Secured</option>
+          <option value="CUSTOM|">Custom</option>
+        </select>
+      </div>
+      <div class="field" id="customTagField" style="display:none;">
+        <label>Custom Tag (line1 / line2)</label>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="tagLine1" placeholder="e.g. AWARD" maxlength="24">
+          <input type="text" id="tagLine2" placeholder="e.g. WINNER" maxlength="24">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Tag Box Color</label>
+        <div class="theme-swatches" id="tagColorSwatches"></div>
+      </div>
+      <div class="field">
+        <label>Photo Bars &amp; QR Border Color</label>
+        <div class="theme-swatches" id="accentSwatches"></div>
+      </div>
+
+      <div class="field">
+        <label>Header Logo (top-right corner)</label>
+        <div class="photo-row">
+          <input type="file" id="headerLogo" accept="image/*">
+          <button class="clear-btn" id="clearLogo">Clear</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Category / Journal / Venue (bold line)</label>
+        <input type="text" id="category" placeholder="e.g. SURFACES AND INTERFACE">
+      </div>
+      <div class="field">
+        <label>Metrics / Subtitle line (small gray line)</label>
+        <input type="text" id="metrics" placeholder="e.g. Quartile: Q1 | Impact Factor: 6.0 | Year: 2026">
+      </div>
+      <div class="field">
+        <label>DOI / Grant / Fellowship No. (optional)</label>
+        <input type="text" id="refNumber" placeholder="e.g. DOI: 10.1016/j.surfin.2024.105551">
+      </div>
+      <div class="field">
+        <label>Title / Headline</label>
+        <textarea id="title" placeholder="e.g. Development of FRET-based fluorescence"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Congrats Message (optional — use {name} as placeholder)</label>
+        <input type="text" id="congratsMsg" placeholder="e.g. 🎉 Congratulations, {name}!" maxlength="60">
+      </div>
+
+      <div class="field">
+        <label>People</label>
+      </div>
+      <div id="peopleList"></div>
+      <button class="add-btn" id="addPerson">+ Add Person</button>
+
+      <div class="field">
+        <label>Footer Brand Text</label>
+        <input type="text" id="footerBrand" value="L.A.B" maxlength="40">
+      </div>
+      <div class="field">
+        <label>Footer Sub-line</label>
+        <input type="text" id="footerSub" placeholder="e.g. Laboratory for Aarathi and Bebeto" maxlength="60">
+      </div>
+
+      <div class="field">
+        <label>Admin Name</label>
+        <input type="text" id="adminName" placeholder="e.g. Mr. Bebeto G Nair" maxlength="40">
+      </div>
+      <div class="field">
+        <label>Admin Contact</label>
+        <input type="text" id="adminContact" placeholder="e.g. +91 8606512587" maxlength="30">
+      </div>
+      <div class="field">
+        <label>Our Initiatives (one per line)</label>
+        <textarea id="initiatives" placeholder="e.g.&#10;Article 41 — PhD/Postdoc openings&#10;Article 51A.(h) — Conferences &amp; workshops&#10;MA-PRISM — NET/GATE practice"></textarea>
+      </div>
+      <div class="field">
+        <label>QR Code (to join initiatives)</label>
+        <div class="photo-row">
+          <input type="file" id="qrCode" accept="image/*">
+          <button class="clear-btn" id="clearQr">Clear</button>
+        </div>
+      </div>
+
+      <details class="style-section">
+        <summary>Text Styling (font, size, color)</summary>
+        <div class="style-rows" id="styleRowsContainer"></div>
+      </details>
+
+      <button class="download-btn" id="downloadBtn">⬇ Download Poster (PNG)</button>
+    </div>
+
+    <div class="preview-panel">
+      <canvas id="posterCanvas" width="1080" height="1080"></canvas>
+      <p class="hint">Add up to 8 people with photo, name and designation. Poster updates live — download when ready.</p>
+    </div>
+  </div>
+
+  <footer class="credit">L.A.B — Success Poster Maker</footer>
+</div>
+
+<script>
+const canvas = document.getElementById('posterCanvas');
+const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = true;
+ctx.imageSmoothingQuality = 'high';
+const W = 1080;
+
+let people = []; // {name, role, img}
+let personIdCounter = 0;
+let qrImg = null;
+let headerLogoImg = null;
+
+const ACCENT_PALETTE = [
+  { name:'Crimson', main:'#C81E4B', dark:'#8F1436' },
+  { name:'Teal',    main:'#0E7C86', dark:'#0A5960' },
+  { name:'Amber',   main:'#C98A12', dark:'#8F620D' },
+  { name:'Indigo',  main:'#3B4FA0', dark:'#2A3873' },
+  { name:'Forest',  main:'#1F7A4D', dark:'#155938' },
+  { name:'Purple',  main:'#6B3FA0', dark:'#4C2C73' },
+  { name:'Charcoal',main:'#2B2B2B', dark:'#171717' },
+  { name:'Orange',  main:'#D9622B', dark:'#A34620' },
+  { name:'Sky',     main:'#2C7BE5', dark:'#1D5BB0' },
+  { name:'Maroon',  main:'#7A1F2B', dark:'#551620' },
+  { name:'Emerald', main:'#0F9D58', dark:'#0B7042' },
+  { name:'Mustard', main:'#B8860B', dark:'#8C6508' },
+  { name:'Navy',    main:'#1F3A5F', dark:'#142842' },
+  { name:'Brown',   main:'#6B4226', dark:'#4A2E1A' },
+  { name:'Magenta', main:'#B0228C', dark:'#7A175F' },
+  { name:'Slate',   main:'#45577B', dark:'#2E3B54' }
+];
+let colorState = { tag:0, accent:0 };
+
+// ---- per-text styling (font, size, color) for every text block on the poster ----
+const FONT_OPTIONS = ['Arial','Georgia','Times New Roman','Courier New','Verdana','Trebuchet MS','Tahoma','Palatino Linotype'];
+const STYLE_FIELDS = [
+  { key:'tag',         label:'Tag Text',            size:24, color:'#FFFFFF', font:'Arial' },
+  { key:'category',    label:'Category / Journal',  size:27, color:'#171717', font:'Arial' },
+  { key:'metrics',     label:'Metrics / Subtitle',  size:19, color:'#4A4A4A', font:'Arial' },
+  { key:'ref',         label:'DOI / Grant No.',     size:17, color:'#1A56DB', font:'Courier New' },
+  { key:'title',       label:'Title / Headline',    size:40, color:'#141414', font:'Georgia' },
+  { key:'congrats',    label:'Congratulations Line',size:20, color:'#C81E4B', font:'Arial' },
+  { key:'personName',  label:'Person Name',         size:23, color:'#141414', font:'Arial' },
+  { key:'personRole',  label:'Person Role/Details', size:18, color:'#5C5C5C', font:'Arial' },
+  { key:'adminLabel',  label:'"ADMIN" Label',       size:13, color:'#8F1436', font:'Arial' },
+  { key:'adminText',   label:'Admin Name/Contact',  size:20, color:'#141414', font:'Arial' },
+  { key:'initHeader',  label:'"OUR INITIATIVES" Label', size:14, color:'#8F1436', font:'Arial' },
+  { key:'initList',    label:'Initiatives List',    size:16, color:'#333333', font:'Arial' },
+  { key:'footerBrand', label:'Footer Brand Text',   size:30, color:'#141414', font:'Georgia' },
+  { key:'footerSub',   label:'Footer Sub-line',     size:16, color:'#6B6B6B', font:'Arial' }
+];
+const STYLE = {};
+STYLE_FIELDS.forEach(f=>{ STYLE[f.key] = { font:f.font, size:f.size, color:f.color }; });
+
+function fontCss(name){ return name.includes(' ') ? '"'+name+'"' : name; }
+function applyStyle(key, boldOverride){
+  const s = STYLE[key];
+  const bold = boldOverride === undefined ? true : boldOverride;
+  ctx.font = (bold ? 'bold ' : '') + s.size + 'px ' + fontCss(s.font) + (s.font==='Georgia'?', serif':', sans-serif');
+  ctx.fillStyle = s.color;
+}
+
+const styleRowsWrap = document.getElementById('styleRowsContainer');
+STYLE_FIELDS.forEach(f=>{
+  const row = document.createElement('div');
+  row.className = 'style-row';
+  const fontOpts = FONT_OPTIONS.map(fo=>`<option value="${fo}"${fo===f.font?' selected':''}>${fo}</option>`).join('');
+  row.innerHTML = `
+    <div class="style-label">${f.label}</div>
+    <select data-key="${f.key}" data-prop="font">${fontOpts}</select>
+    <input type="number" data-key="${f.key}" data-prop="size" value="${f.size}" min="8" max="90">
+    <input type="color" data-key="${f.key}" data-prop="color" value="${f.color}">
+  `;
+  styleRowsWrap.appendChild(row);
+  row.querySelectorAll('select, input').forEach(el=>{
+    el.addEventListener('input', ()=>{
+      const key = el.dataset.key, prop = el.dataset.prop;
+      STYLE[key][prop] = prop==='size' ? parseInt(el.value,10)||STYLE[key][prop] : el.value;
+      draw();
+    });
+  });
+});
+
+function buildColorPicker(containerId, stateKey){
+  const wrap = document.getElementById(containerId);
+  ACCENT_PALETTE.forEach((c,i)=>{
+    const s = document.createElement('div');
+    s.className = 'swatch' + (i===0 ? ' active':'');
+    s.title = c.name;
+    s.style.background = c.main;
+    s.addEventListener('click', ()=>{
+      colorState[stateKey] = i;
+      wrap.querySelectorAll('.swatch').forEach(el=>el.classList.remove('active'));
+      s.classList.add('active');
+      draw();
+    });
+    wrap.appendChild(s);
+  });
+}
+buildColorPicker('tagColorSwatches', 'tag');
+buildColorPicker('accentSwatches', 'accent');
+
+document.getElementById('headerLogo').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    const img = new Image();
+    img.onload = ()=>{ headerLogoImg = img; draw(); };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+document.getElementById('clearLogo').addEventListener('click', ()=>{
+  headerLogoImg = null;
+  document.getElementById('headerLogo').value = '';
+  draw();
+});
+
+document.getElementById('qrCode').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    const img = new Image();
+    img.onload = ()=>{ qrImg = img; draw(); };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+document.getElementById('clearQr').addEventListener('click', ()=>{
+  qrImg = null;
+  document.getElementById('qrCode').value = '';
+  draw();
+});
+
+function roundRect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+function splitLongToken(token, maxWidth){
+  // breaks a single unbroken token (e.g. a long URL/DOI) into pieces that fit maxWidth
+  if(ctx.measureText(token).width <= maxWidth) return [token];
+  const pieces = [];
+  let chunk = '';
+  for(const ch of token){
+    const test = chunk + ch;
+    if(ctx.measureText(test).width > maxWidth && chunk.length){
+      pieces.push(chunk);
+      chunk = ch;
+    } else {
+      chunk = test;
+    }
+  }
+  if(chunk) pieces.push(chunk);
+  return pieces;
+}
+
+function wrapText(text, x, y, maxWidth, lineHeight, align, returnLines){
+  ctx.textAlign = align || 'left';
+  const words = text.split(' ');
+  let line = '', lines = [];
+  words.forEach(word=>{
+    // an overlong single word (URL/DOI with no spaces) gets broken by character first
+    const parts = ctx.measureText(word).width > maxWidth ? splitLongToken(word, maxWidth) : [word];
+    parts.forEach(part=>{
+      const test = line + part + ' ';
+      if(ctx.measureText(test).width > maxWidth && line.length){
+        lines.push(line.trim());
+        line = part + ' ';
+      } else {
+        line = test;
+      }
+    });
+  });
+  lines.push(line.trim());
+  lines.forEach((l,i)=> ctx.fillText(l, x, y + i*lineHeight));
+  return returnLines ? lines : lines.length;
+}
+
+function addPersonRow(data){
+  const id = personIdCounter++;
+  const person = { id, name:(data&&data.name)||'', role:(data&&data.role)||'', img:null };
+  people.push(person);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'person-card';
+  wrap.dataset.id = id;
+  wrap.innerHTML = `
+    <div class="top-row"><span>Person</span><button class="rm-btn">Remove</button></div>
+    <div class="field" style="margin-bottom:8px;">
+      <input type="text" class="p-name" placeholder="Name (e.g. Mr. Bebeto G)" maxlength="40">
+    </div>
+    <div class="field" style="margin-bottom:8px;">
+      <textarea class="p-role" placeholder="Designation / affiliation, one or two lines"></textarea>
+    </div>
+    <div class="photo-row">
+      <input type="file" class="p-photo" accept="image/*">
+    </div>
+  `;
+  document.getElementById('peopleList').appendChild(wrap);
+
+  wrap.querySelector('.rm-btn').addEventListener('click', ()=>{
+    people = people.filter(p=>p.id!==id);
+    wrap.remove();
+    draw();
+  });
+  wrap.querySelector('.p-name').addEventListener('input', (e)=>{
+    person.name = e.target.value; draw();
+  });
+  wrap.querySelector('.p-role').addEventListener('input', (e)=>{
+    person.role = e.target.value; draw();
+  });
+  wrap.querySelector('.p-photo').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev)=>{
+      const img = new Image();
+      img.onload = ()=>{ person.img = img; draw(); };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+document.getElementById('addPerson').addEventListener('click', ()=>{
+  if(people.length>=8) return;
+  addPersonRow();
+});
+
+document.getElementById('tagType').addEventListener('change', (e)=>{
+  document.getElementById('customTagField').style.display =
+    e.target.value.startsWith('CUSTOM') ? 'block' : 'none';
+  draw();
+});
+
+['category','metrics','refNumber','title','footerBrand','footerSub','tagLine1','tagLine2','adminName','adminContact','initiatives','congratsMsg'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', draw);
+});
+
+
+function draw(){
+  const tagColor = ACCENT_PALETTE[colorState.tag].main;
+  const accentColor = ACCENT_PALETTE[colorState.accent].main;
+  const tagVal = document.getElementById('tagType').value;
+  let tagLine1, tagLine2;
+  if(tagVal.startsWith('CUSTOM')){
+    tagLine1 = document.getElementById('tagLine1').value.trim() || 'UPDATE';
+    tagLine2 = document.getElementById('tagLine2').value.trim() || '';
+  } else {
+    [tagLine1, tagLine2] = tagVal.split('|');
+  }
+  const category = document.getElementById('category').value.trim() || 'CATEGORY NAME';
+  const metrics = document.getElementById('metrics').value.trim();
+  const refNumber = document.getElementById('refNumber').value.trim();
+  const title = document.getElementById('title').value.trim() || 'Your achievement title goes here';
+  const congratsMsg = document.getElementById('congratsMsg').value.trim();
+  const congratsLineH = 30;
+  const footerBrand = document.getElementById('footerBrand').value.trim() || 'L.A.B';
+  const footerSub = document.getElementById('footerSub').value.trim();
+  const adminName = document.getElementById('adminName').value.trim();
+  const adminContact = document.getElementById('adminContact').value.trim();
+  const initiativesLines = document.getElementById('initiatives').value
+    .split('\n').map(s=>s.trim()).filter(Boolean).slice(0,6);
+  const qrSize = 116;
+
+  // --- pre-compute layout heights before touching the canvas ---
+  ctx.font = 'bold 40px Georgia, serif';
+  const measureLines = (text, maxWidth)=>{
+    const words = text.split(' ');
+    let line = '', n = 1;
+    words.forEach(word=>{
+      const parts = ctx.measureText(word).width > maxWidth ? splitLongToken(word, maxWidth) : [word];
+      parts.forEach(part=>{
+        const test = line + part + ' ';
+        if(ctx.measureText(test).width > maxWidth && line.length){ n++; line = part+' '; }
+        else { line = test; }
+      });
+    });
+    return n;
+  };
+  const titleLineCount = measureLines(title, W-112);
+
+  // --- header geometry, computed early so long category/metrics/DOI text
+  // properly wraps and pushes the title down instead of overflowing ---
+  const tagY = 46;
+  applyStyle('tag');
+  const w1 = ctx.measureText((tagLine1||'').toUpperCase()).width;
+  const w2 = tagLine2 ? ctx.measureText(tagLine2.toUpperCase()).width : 0;
+  const tagW = Math.max(190, Math.max(w1, w2) + 48);
+  const tagH = tagLine2 ? 92 : 64;
+  const logoMaxH = 92, logoMaxW = 220;
+  let categoryRightEdge = W - 56;
+  if(headerLogoImg){
+    const iw = headerLogoImg.width, ih = headerLogoImg.height;
+    const scale = Math.min(logoMaxW/iw, logoMaxH/ih);
+    categoryRightEdge = (W - 56 - iw*scale) - 24;
+  }
+  const textX = 56 + tagW + 28;
+  const headerTextW = categoryRightEdge - textX;
+  const categoryLineH = Math.round(STYLE.category.size * 1.15);
+  const metricsLineH = Math.round(STYLE.metrics.size * 1.32);
+  const refLineH = Math.round(STYLE.ref.size * 1.24);
+  applyStyle('category');
+  const categoryLineCount = measureLines(category.toUpperCase(), headerTextW);
+  applyStyle('metrics', false);
+  const metricsLineCount = metrics ? measureLines(metrics, headerTextW) : 0;
+  applyStyle('ref', false);
+  const refLineCount = refNumber ? measureLines(refNumber, headerTextW) : 0;
+  let headerTextBottom = tagY + 34 + (categoryLineCount-1)*categoryLineH + 30;
+  if(metricsLineCount) headerTextBottom += metricsLineCount*metricsLineH;
+  if(refLineCount) headerTextBottom += 6 + refLineCount*refLineH;
+  const titleTop = Math.max(headerTextBottom, tagY + tagH) + 40;
+  const gridTop = titleTop + titleLineCount*44 + 26;
+  const isSolo = people.length === 1;
+  const perRow = people.length > 0 ? Math.min(4, people.length) : 4;
+  const cellW = (W - 112) / perRow;
+  const photoScale = { 1:1.5, 2:1.3, 3:1.15, 4:1 }[perRow] || 1;
+  const photoSize = Math.round(100 * photoScale);
+  const nameFontPx = Math.round(STYLE.personName.size * Math.min(photoScale, 1.25));
+  const roleFontPx = Math.round(STYLE.personRole.size * Math.min(photoScale, 1.2));
+  const nameFontH = Math.round(nameFontPx * 1.3);
+  const roleFontH = Math.round(roleFontPx * 1.3);
+  const roleGap = 8;
+
+  ctx.font = roleFontPx + 'px ' + fontCss(STYLE.personRole.font);
+  const personLineCounts = people.map(p=>{
+    const roleLines = (p.role||'').split('\n').filter(Boolean);
+    let total = 0;
+    roleLines.forEach(line=> total += measureLines(line, cellW-30));
+    return Math.max(1, total);
+  });
+
+  const rows = [];
+  for(let i=0;i<people.length;i+=perRow){
+    rows.push(personLineCounts.slice(i, i+perRow));
+  }
+  const rowHeights = rows.map(rowCounts=>{
+    const maxLines = Math.max(...rowCounts);
+    return photoSize + 22 + (congratsMsg ? congratsLineH : 0) + nameFontH + maxLines*roleFontH + roleGap + 34; // 34 = bottom row padding
+  });
+  const rowOffsets = [];
+  let running = gridTop;
+  rowHeights.forEach(h=>{ rowOffsets.push(running); running += h; });
+  let gridBottom = people.length ? running : gridTop;
+
+  // solo achievement: large photo on top, name/details stacked below — left-aligned like the rest of the poster
+  const soloBarW = 8;
+  const soloPhotoSize = 320;
+  const soloPhotoX = 56 + soloBarW + 16;
+  const soloNameFontPx = Math.round(STYLE.personName.size * 1.48);
+  const soloRoleFontPx = Math.round(STYLE.personRole.size * 1.17);
+  const soloRoleLineH = 28;
+  let soloTextBlockH = soloNameFontPx + 16 + (congratsMsg ? congratsLineH : 0);
+  if(isSolo){
+    ctx.font = soloRoleFontPx + 'px ' + fontCss(STYLE.personRole.font);
+    const roleLines = (people[0].role||'').split('\n').filter(Boolean);
+    roleLines.forEach(line=>{ soloTextBlockH += measureLines(line, W-112) * soloRoleLineH; });
+    gridBottom = gridTop + soloPhotoSize + 34 + soloTextBlockH + 20;
+  }
+
+  // footer column x-positions, decided up front so we can size-wrap text against them
+  const qrColX = qrImg ? W - 56 - qrSize : null;
+  const rightEdge = qrImg ? qrColX - 30 : W - 56;
+  const adminColX = W * 0.36;
+  const initColX = W * 0.56;
+  const initColW = rightEdge - initColX;
+  const brandSubMaxW = adminColX - 98 - 24;
+
+  applyStyle('footerBrand');
+  const brandLineCount = footerBrand ? measureLines(footerBrand, brandSubMaxW) : 1;
+  applyStyle('footerSub', false);
+  const footerSubLineCount = footerSub ? measureLines(footerSub, brandSubMaxW) : 0;
+  const brandLineH = Math.round(STYLE.footerBrand.size * 1.15);
+  const subLineH = Math.round(STYLE.footerSub.size * 1.35);
+  const leftFooterH = brandLineCount*brandLineH + (footerSubLineCount ? 16 + footerSubLineCount*subLineH : 0);
+  const adminFooterH = (adminName ? 22+28 : 0) + (adminContact ? 24 : 0);
+  const initiativesFooterH = initiativesLines.length ? 20 + 12 + initiativesLines.length*21 : 0;
+  const qrFooterH = qrImg ? qrSize + 26 : 0;
+  const footerContentH = Math.max(leftFooterH, adminFooterH, initiativesFooterH, qrFooterH, 40);
+  const footerBlockH = footerContentH + 70;
+
+  // lock a consistent 1080x1350 (4:5) frame — spread any leftover space
+  // evenly above/below the people grid instead of dumping it all at the bottom
+  // lock a consistent WhatsApp-ready frame — spread leftover space evenly
+  // above/below the people grid, capped so sparse content never balloons
+  const TARGET_H = 1350;
+  const MAX_GAP = 60;
+  const naturalTotal = gridBottom + footerBlockH;
+  const rawExtra = Math.max(0, TARGET_H - naturalTotal);
+  const usedExtra = Math.min(rawExtra, MAX_GAP * 2);
+  const extraTop = Math.round(usedExtra / 2);
+  rowOffsets.forEach((v,i)=>{ rowOffsets[i] = v + extraTop; });
+  gridBottom += extraTop;
+  const H = naturalTotal + usedExtra;
+
+  canvas.width = W;
+  canvas.height = H;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+
+  // background
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0,0,W,H);
+
+  // top tag ribbon — sized to fit whatever text is typed
+  const tagX = 56;
+  ctx.fillStyle = tagColor;
+  roundRect(tagX, tagY, tagW, tagH, 4);
+  ctx.fill();
+  applyStyle('tag');
+  ctx.textAlign = 'center';
+  if(tagLine2){
+    ctx.fillText(tagLine1.toUpperCase(), tagX+tagW/2, tagY+40);
+    ctx.fillText(tagLine2.toUpperCase(), tagX+tagW/2, tagY+70);
+  } else {
+    ctx.fillText(tagLine1.toUpperCase(), tagX+tagW/2, tagY+tagH/2+9);
+  }
+
+  // category + metrics
+  if(headerLogoImg){
+    const iw = headerLogoImg.width, ih = headerLogoImg.height;
+    const scale = Math.min(logoMaxW/iw, logoMaxH/ih);
+    const dw = iw*scale, dh = ih*scale;
+    const lx = W - 56 - dw;
+    const ly = tagY + (logoMaxH-dh)/2;
+    ctx.drawImage(headerLogoImg, lx, ly, dw, dh);
+  }
+  ctx.textAlign = 'left';
+  applyStyle('category');
+  const catLinesDrawn = wrapText(category.toUpperCase(), textX, tagY+34, headerTextW, categoryLineH, 'left');
+  let subLineY = tagY + 34 + (catLinesDrawn-1)*categoryLineH + 30;
+  if(metrics){
+    applyStyle('metrics', false);
+    const metricsLines = wrapText(metrics, textX, subLineY, headerTextW, metricsLineH, 'left');
+    subLineY += metricsLines*metricsLineH;
+  }
+  if(refNumber){
+    applyStyle('ref', false);
+    const refLinesDrawn = wrapText(refNumber, textX, subLineY + 6, headerTextW, refLineH, 'left', true);
+    // hyperlink-style underline beneath each wrapped line
+    ctx.strokeStyle = STYLE.ref.color;
+    ctx.lineWidth = 1;
+    refLinesDrawn.forEach((l,idx)=>{
+      const w = ctx.measureText(l).width;
+      const ly = subLineY + 6 + idx*refLineH + 4;
+      ctx.beginPath();
+      ctx.moveTo(textX, ly);
+      ctx.lineTo(textX + w, ly);
+      ctx.stroke();
+    });
+  }
+
+  // title
+  applyStyle('title');
+  wrapText(title, 56, titleTop, W-112, 50, 'left');
+
+  // people grid
+  const barW = 6;
+
+  if(isSolo){
+    const p = people[0];
+    const photoY = gridTop;
+
+    // accent bar + large photo on top
+    ctx.fillStyle = accentColor;
+    ctx.fillRect(56, photoY, soloBarW, soloPhotoSize);
+
+    if(p.img){
+      ctx.save();
+      roundRect(soloPhotoX, photoY, soloPhotoSize, soloPhotoSize, 12);
+      ctx.clip();
+      const iw=p.img.width, ih=p.img.height;
+      const scale = Math.max(soloPhotoSize/iw, soloPhotoSize/ih);
+      const dw=iw*scale, dh=ih*scale;
+      ctx.drawImage(p.img, soloPhotoX-(dw-soloPhotoSize)/2, photoY-(dh-soloPhotoSize)/2, dw, dh);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = '#DDD9D3';
+      roundRect(soloPhotoX, photoY, soloPhotoSize, soloPhotoSize, 12);
+      ctx.fill();
+      ctx.fillStyle = '#8A8A8A';
+      ctx.font = '90px Arial';
+      ctx.textAlign = 'center';
+      const initials = (p.name||'?').split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+      ctx.fillText(initials||'?', soloPhotoX+soloPhotoSize/2, photoY+soloPhotoSize/2+30);
+      ctx.textAlign = 'left';
+    }
+    ctx.strokeStyle = '#DADADA';
+    ctx.lineWidth = 2;
+    roundRect(soloPhotoX, photoY, soloPhotoSize, soloPhotoSize, 12);
+    ctx.stroke();
+
+    // name + role, stacked below, left-aligned to match the rest of the poster
+    const textTop = photoY + soloPhotoSize + 34;
+    let nameBaseline = textTop + soloNameFontPx;
+    if(congratsMsg){
+      ctx.fillStyle = STYLE.congrats.color;
+      ctx.font = 'italic bold ' + STYLE.congrats.size + 'px ' + fontCss(STYLE.congrats.font);
+      ctx.fillText(congratsMsg.replace(/\{name\}/gi, p.name || 'Name'), 56, textTop + 18);
+      nameBaseline += congratsLineH;
+    }
+    ctx.fillStyle = STYLE.personName.color;
+    ctx.font = 'bold ' + soloNameFontPx + 'px ' + fontCss(STYLE.personName.font);
+    ctx.textAlign = 'left';
+    ctx.fillText(p.name || 'Name', 56, nameBaseline);
+
+    ctx.fillStyle = STYLE.personRole.color;
+    ctx.font = soloRoleFontPx + 'px ' + fontCss(STYLE.personRole.font);
+    const roleLines = (p.role||'').split('\n').filter(Boolean);
+    let ry = nameBaseline + 24;
+    roleLines.forEach(line=>{
+      const wrapped = wrapText(line, 56, ry, W-112, soloRoleLineH, 'left');
+      ry += wrapped*soloRoleLineH;
+    });
+  } else {
+    people.forEach((p, i)=>{
+      const row = Math.floor(i/perRow);
+      const col = i % perRow;
+      const cx = 56 + col*cellW;
+      const cy = rowOffsets[row];
+
+      // accent bar
+      ctx.fillStyle = accentColor;
+      ctx.fillRect(cx, cy, barW, photoSize);
+
+      // photo
+      const px = cx + barW + 12;
+      if(p.img){
+        ctx.save();
+        roundRect(px, cy, photoSize, photoSize, 8);
+        ctx.clip();
+        const iw=p.img.width, ih=p.img.height;
+        const scale = Math.max(photoSize/iw, photoSize/ih);
+        const dw=iw*scale, dh=ih*scale;
+        ctx.drawImage(p.img, px-(dw-photoSize)/2, cy-(dh-photoSize)/2, dw, dh);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = '#DDD9D3';
+        roundRect(px, cy, photoSize, photoSize, 8);
+        ctx.fill();
+        ctx.fillStyle = '#8A8A8A';
+        ctx.font = Math.round(34*photoScale) + 'px Arial';
+        ctx.textAlign = 'center';
+        const initials = (p.name||'?').split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+        ctx.fillText(initials||'?', px+photoSize/2, cy+photoSize/2+12);
+        ctx.textAlign = 'left';
+      }
+      // uniform thin border so a mix of photos/icons/illustrations reads as intentional
+      ctx.strokeStyle = '#DADADA';
+      ctx.lineWidth = 2;
+      roundRect(px, cy, photoSize, photoSize, 8);
+      ctx.stroke();
+
+      // name + role
+      let nameY = cy + photoSize + 30;
+      if(congratsMsg){
+        ctx.fillStyle = STYLE.congrats.color;
+        ctx.font = 'italic bold ' + Math.round(STYLE.congrats.size*0.75) + 'px ' + fontCss(STYLE.congrats.font);
+        wrapText(congratsMsg.replace(/\{name\}/gi, p.name || 'Name'), cx, nameY - 4, cellW - 30, 18, 'left');
+        nameY += congratsLineH;
+      }
+      ctx.fillStyle = STYLE.personName.color;
+      ctx.font = 'bold ' + nameFontPx + 'px ' + fontCss(STYLE.personName.font);
+      ctx.textAlign = 'left';
+      ctx.fillText(p.name || 'Name', cx, nameY);
+
+      ctx.fillStyle = STYLE.personRole.color;
+      ctx.font = roleFontPx + 'px ' + fontCss(STYLE.personRole.font);
+      const roleLines = (p.role||'').split('\n').filter(Boolean);
+      let ry = nameY + 24;
+      roleLines.forEach(line=>{
+        const wrapped = wrapText(line, cx, ry, cellW - 30, 20, 'left');
+        ry += wrapped*20;
+      });
+    });
+  }
+
+  // footer
+  const footerY = gridBottom + 40;
+  ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(56, footerY-24);
+  ctx.lineTo(W-56, footerY-24);
+  ctx.stroke();
+
+  // brand mark (left)
+  ctx.fillStyle = accentColor;
+  ctx.beginPath();
+  ctx.arc(70, footerY+18, 16, 0, Math.PI*2);
+  ctx.fill();
+  applyStyle('footerBrand');
+  ctx.textAlign = 'left';
+  const brandLinesDrawn = wrapText(footerBrand, 98, footerY+28, brandSubMaxW, brandLineH, 'left');
+  let subY = footerY + 28 + (brandLinesDrawn-1)*brandLineH + subLineH;
+
+  if(footerSub){
+    applyStyle('footerSub', false);
+    wrapText(footerSub, 98, subY, brandSubMaxW, subLineH, 'left');
+  }
+
+  // three remaining footer columns: admin (vertically centered) | initiatives | QR
+  const adminBlockH = (adminName ? 22+28 : 0) + (adminContact ? 24 : 0);
+  let ay = footerY + Math.max(4, (footerContentH - adminBlockH)/2);
+  if(adminName){
+    applyStyle('adminLabel');
+    ctx.fillText('ADMIN', adminColX, ay);
+    ay += 22;
+    applyStyle('adminText');
+    ctx.fillText(adminName, adminColX, ay);
+    ay += 28;
+  }
+  if(adminContact){
+    applyStyle('adminText');
+    ctx.fillText(adminContact, adminColX, ay);
+    ay += 24;
+  }
+
+  let iy = footerY + 6;
+  if(initiativesLines.length){
+    applyStyle('initHeader');
+    ctx.fillText('OUR INITIATIVES', initColX, iy);
+    iy += 20;
+    applyStyle('initList', false);
+    initiativesLines.forEach(line=>{
+      const wrapped = wrapText('• ' + line, initColX, iy, initColW, 21, 'left');
+      iy += wrapped*21;
+    });
+  }
+
+  if(qrImg){
+    const qy = footerY;
+    roundRect(qrColX, qy, qrSize, qrSize, 8);
+    ctx.save();
+    ctx.clip();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(qrColX, qy, qrSize, qrSize);
+    ctx.drawImage(qrImg, qrColX, qy, qrSize, qrSize);
+    ctx.restore();
+    ctx.strokeStyle = accentColor;
+    ctx.lineWidth = 2;
+    roundRect(qrColX, qy, qrSize, qrSize, 8);
+    ctx.stroke();
+
+    ctx.fillStyle = '#141414';
+    ctx.font = 'bold 13px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('SCAN TO JOIN', qrColX + qrSize/2, qy + qrSize + 20);
+    ctx.textAlign = 'left';
+  }
+}
+
+// seed with two example person rows
+addPersonRow({name:'', role:''});
+draw();
+
+document.getElementById('downloadBtn').addEventListener('click', ()=>{
+  const link = document.createElement('a');
+  link.download = 'lab-success-poster.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+});
+</script>
+</body>
+</html>
